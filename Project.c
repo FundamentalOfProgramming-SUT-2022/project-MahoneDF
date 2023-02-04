@@ -13,7 +13,9 @@
 
 // char* token = (char*)malloc(sizeof(char)*1000);
 
-int a[10000] = {0};
+int a[1000] = {0};
+int b[1000] = {0}; 
+char file[10000] = {0};
 char word1[100][100] = {'\0'};
 int wordcounter1 = 0;
 char word2[100][100] = {'\0'};
@@ -207,14 +209,16 @@ void Grep(char* address, char* str , char x){
     int s = 0;
     FILE *f;
     f =fopen(address, "r+");
-    char c =fgetc(f);
-    while(c!=EOF){
-        if (c==(*str)){
+    fread(file, 1000, 1, f);
+    int count = strlen(file);
+    // printf("%d", count);
+    for (int i = 0; i < count; i++){
+        // printf("salam\n");
+        if (*(file+i) == (*str)){
             check = 1;
-            for (int i = 1; i < strlen(str); i++){
-                c = fgetc(f);
-                int save = i;
-                if ((*(str+i)!=c) || (c == EOF)){
+            for (int j = 1; j < strlen(str); j++){
+                // printf("%c", *(file+i+j));
+                if ((*(str+j) != *(file + i + j)) || (i + j == count)){
                     check = 0;
                     break;
                 }
@@ -229,10 +233,7 @@ void Grep(char* address, char* str , char x){
                 }
             }
         }
-        else{
-            c = fgetc(f);
-        }
-        if (c=='\n'){
+        if (*(file + i)=='\n'){
             s = 0;
             line++;
         }
@@ -287,17 +288,35 @@ void Auto_Indent(char* address){
     FILE *k;
     f = fopen(address, "r+");
     k = fopen("komaki.txt", "a+");
+    fread(file, 1000, 1, f);
+    fclose(f);
+    remove(address);
+    int count = strlen(file);
     int tab = 0;
-    char c = fgetc(f);
+    // char c = fgetc(f);
     int t = 0;
-    while(c != EOF){
-        if(c=='{'){
-            fputc((int)c, k);
+    for(int i = 0; i < count; i++){
+        if ((*(file+i) == ' ') || (*(file+i) == '\n')){
+            int z = i;
+            while((*(file+z) == ' ')|| (*(file+z) == '\n')){
+                z++;
+            }
+            if (*(file + z) == '{'){
+                if ((i >= 1) && (*(file+i-1) != '{') && (*(file+i-1) != '}'))
+                fputc((int)(*(file + i)), k);    
+                i = z;
+            }
+        }
+        if(*(file+i)=='{'){
+            if ((i >= 1) && (*(file+i-1) != '{') && (*(file+i-1) != '}')&& (*(file+i-1) != ' ')){
+                fputc((int)(' '), k);
+            }
+            fputc((int)(*(file + i)), k);
             tab++;
             // CopyFile(address, "komaki.txt", 0, t);
             // printf("%d ", t);
             fputc(10, k);
-            for (int i = 0; i < tab; i++){
+            for (int j = 0; j < tab; j++){
                 fputc(9, k);
             }
             // CopyFile(address, "komaki.txt", t+1, -1);
@@ -308,24 +327,23 @@ void Auto_Indent(char* address){
             // fseek(f, 0, SEEK_SET);
             // PtrToInt(f, t);
         }
-        else if(c == '}'){
+        else if(*(file+i) == '}'){
             tab--;
             fputc(10, k);
-            for (int i = 0; i < tab; i++){
+            for (int j = 0; j < tab; j++){
                 fputc(9, k);
             }
-            fputc((int)c, k);
+            fputc((int)(*(file + i)), k);
             fputc(10, k);
         }
+
         else{
-            fputc((int)c, k);
+            fputc((int)(*(file + i)), k);
         }
-        c = fgetc(f);
         t++;
     }
-    fclose(f);
+    printf("sasad");
     fclose(k);
-    remove(address);
     rename("komaki.txt", address);
 
 }
@@ -549,19 +567,91 @@ void Tree(char *address, const int root, int depth){
     closedir(dir);
 }
 
-int* SearchStr(char* address, char* str){
-    int j = 1;
-    int t = 0;
-    char x[10000];
+int LetterByWord(char* str, int counter){
+    int word = 1;
+    for (int i = 0; i <= counter ; i++){
+        if (((*(str + i)==' ') && (*(str + i + 1) !=' '))||(*(str + i)==' ') && (*(str + i + 1) !='\n')||((*(str + i)=='\n') && (*(str + i + 1) !=' '))||((*(str + i)=='\n') && (*(str + i + 1) !='\n'))){
+            word++;
+        }
+    }
+    return word;
+}
+
+void SearchStr(char* address, char* str){
+    int t = 1;
+    int s;
+    char str1[10000]; 
+    int size = strlen(str);
+    // char file[10000];
+    // printf("%s",  str);
     int count = 0;
+    if (*str == '*'){
+        s = 1;
+        for(int i = 1; i < size; i++){
+            *(str1 + i - 1) = *(str + i);
+        }
+    }
+    else if ((*(str+ size -1) == '*')&&(*(str+ size -2) != '\\')){
+        s = 2;
+        // printf("%s",  str);
+        for(int i = 0; i < size - 1; i++){
+            // printf("%c", *(str+i-1));
+            *(str1 + i) = *(str + i );
+        }
+    }
+    else{
+        s = 0;
+        strcpy(str1, str);
+    }
+    // printf("%d %s", s, str1);
     FILE *f;
     f = fopen(address,  "r");
-    fread(x, 10000, 1, f);
-    int k = strlen(x);
-    
+    fread(file, 10000, 1, f);
 
-    a[0] = j-1;
-    return a;
+    int k = strlen(file);
+    for (int i = 0; i < k; i++){
+        if (*(file+i)==*str1){
+            int check = 1;
+            for (int j = 1; j < strlen(str1); j++){
+                if ((*(str1 + j) != *(file + i + j))|| (i+j == k)){
+                    check = 0;
+                    break;
+                }
+            }
+            // printf("%d", check);
+            if (check == 1){
+                // printf("%d",s);
+                if (s == 0){
+                    a[t] = i;
+                    b[t] = i + strlen(str1) -1;
+                    t++;
+                }
+                else if (s == 1){
+                    // printf("sas");
+                    int z = i;
+                    while((*(file + z) != ' ')&&(z != 0)&&(*(file+z) != '\n')){
+                        z--;
+                    }
+                    a[t] = z;
+                    b[t] = i + strlen(str1) - 1;
+                    t++;
+                }
+                else{
+                    int z = i + strlen(str1) - 1 ;
+                    while(((*(file + z)) != ' ')&&(*(file + z) != '\n')&&(*(file + z) != EOF)){
+                        // printf("%c %d\n", *(file+z), z);
+                        z++;
+                    }
+                    a[t] = i;
+                    b[t] = z;
+                    t++;
+                }
+            }
+        }
+    }
+    a[0] = t - 1; 
+    b[0] = t - 1;
+    fclose(f);
 }
 
 int MoghWildWord(char* pattern, char* word){
@@ -713,6 +803,44 @@ void SearchPattern(char* address, char* str){
     fclose(f);
 }
 
+void Replace_All(char* address, char* str1, char* str2){
+    SearchStr(address, str1);
+    int t = 0;
+    for (int i = 1; i <= a[0]; i++){
+        CopyFile(address, "komaki.txt", t, a[i] - 1);
+
+        FILE *k;
+        k = fopen("komaki.txt", "a+");
+        fputs(str2, k);
+        fclose(k);
+
+        // CopyFile(address, "komaki.txt", b[i] + 1, a[i+1] - 1);
+        t = b[i] + 1;
+    }
+    CopyFile(address, "komaki.txt", b[a[0]] + 1, -1);
+    remove(address);
+    rename("komaki.txt", address);
+    }
+
+
+void Replace_At(char* address, char* str1, char* str2, int at){
+    SearchStr(address, str1);
+    if(a[0] < at){
+        printf("out of bound");
+        return;
+    }
+    printf("%s", str2);
+    CopyFile(address, "komaki.txt", 0, a[at] - 1);
+    FILE *k;
+    k = fopen("komaki.txt", "a+");
+    // fputc(10, k);
+    fputs(str2, k);
+    fclose(k);
+    // fprintf(k, "%s", str2);
+    CopyFile(address, "komaki.txt", b[at] + 1, -1);
+    remove(address);
+    rename("komaki.txt", address);
+}
 // ...........................................................................................
 // ........................................input..............................................
 // ...........................................................................................
@@ -758,6 +886,36 @@ int check_creatfile(char* input, char* address, char* address2){
 void print_invalid_input(){
     printf("invalid input\n");
 }
+
+void input_to_str(char* input, char* str){
+    int j = 0;
+    int s = 0;
+    for (int i = 0; i < strlen(input); i++){
+        if  (*(input + i) == '\\'){
+            if ((*(input + i + 1) == 'n') && (s == 0)){
+                // printf("salam\n");
+                *(str + j) = '\n';
+                j++;
+                i++;
+            }
+            else if((*(input + i + 1)== 'n') && (s != 0)){
+                *(str + j) = 'n';
+                i++;
+                j++;
+            }
+            else if(*(input + i + 1)== '\\'){
+                s = 1;
+                *(str + j) = '\\';
+                j++;
+            }
+        }
+        else{
+            s = 0;
+            *(str + j) = *(input + i);
+            j++;
+        }
+    }
+}
 // int check_insertstr(char* input){
 //     if(strcmp(input,"insertstr")==0){
 //         sscanf(other,"%s %[^\n]%*c",useless,address);
@@ -789,7 +947,14 @@ int main() {
     // Copy("test.txt", 2, 10, 30, 'b');
     // Cut("test.txt", 2, 10, 30, 'f');
     // Paste("test.txt", 3, 1);
-    // Grep("test.txt","ppa",'x');
+    // Grep("root/test.txt","ppa",'I');
+    // SearchStr("root/test.txt", "*alam");
+    // printf("%d\n", a[0]);
+    // for (int i = 1; i <= a[0]; i++){
+    //     printf("%d %d\n", a[i], b[i]);
+    //     int k = LetterByWord(file, a[i]);
+    //     printf("%d ", k);
+    // }
     // printf("%d", a);
     // PrintFileLine("test.txt", 7);
     // MakeCopyForSave("root/me/you/v1.txt");
@@ -822,6 +987,14 @@ int main() {
     // printf("salamj");
     // SearchPattern("root/test.txt", "b* dustan*");
     // printf("sadds");
+    // .................................................
+    // Replace_All("root/test.txt", "pp*", "dadash");
+    //.................................................. 
+    // char str[1000];
+    // char input[1000];
+    // gets(input);
+    // input_to_str(input, str);
+    // printf("%s", str);
     // .................................................
     while(1){
         char command[20];
